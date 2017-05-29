@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     package_data={'': ['cocoag/configuration/default_cocoag.cfg']},
     include_package_data=True,
-    version="1.1.1-beta",
+    version="1.1.2-beta",
     description="Python utility to generate code coverage badges and append them to README's",
     author="David Cyze",
     author_email="mrcyze@gmail.com",
