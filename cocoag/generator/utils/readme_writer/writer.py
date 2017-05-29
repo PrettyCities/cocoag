@@ -22,7 +22,7 @@ class ReadmeWriter(object):
 
         else:
             title = os.path.basename(directory)
-            logging.debug("Using title '{}' for new README.md".format(title))
+            logging.info("Using title '{}' for new README.md".format(title))
             cls._handle_new_file(cov_img_markdown=cov_img_markdown, readme_file=readme_file, title=title)
 
     @classmethod
@@ -50,7 +50,9 @@ class ReadmeWriter(object):
 
     @classmethod
     def _gen_cov_img_markdown(cls, img_uri: str) -> str:
-        return cls._img_text.format(uri=img_uri)
+        img_markdown = cls._img_text.format(uri=img_uri)
+        logging.info("Adding markdown '{}' to README.md".format(img_markdown))
+        return img_markdown
 
     @classmethod
     def _get_code_cov_line(cls, lines: list) -> int:

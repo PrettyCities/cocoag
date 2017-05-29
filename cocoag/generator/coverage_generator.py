@@ -12,18 +12,18 @@ from typing import NamedTuple
 BadgeInfo = NamedTuple('BadgeInfo', [("associated_branch", str), ("file_location", str)])
 
 CoverageGeneratorConfig = NamedTuple('CoverageGeneratorConfig',
-                                     [("bucket_root", str), ("project_root", str), ("sub_directories", list)])
+                                     [("project_root", str), ("sub_directories", list)])
 
 
 class CoverageGenerator(object):
     # Values from config
     _package_root = config.get("general", "package_root")
     _root_dir = config.get("project", "root_dir")
-    _svg_output_file_name = config.get("project", "svg_output_file_name")
+    _svg_output_file_name = config.get("general", "svg_output_file_name")
 
     _badge_output_location = os.path.join(_package_root, _svg_output_file_name)
     _BadgeInfo = namedtuple("BadgeInfo", ["associated_branch", "file_location"])
-    _CoverageGeneratorConfig = namedtuple("CoverageGeneratorConfig", ["bucket_root", "project_root", "sub_directories"])
+    _CoverageGeneratorConfig = namedtuple("CoverageGeneratorConfig", ["project_root", "sub_directories"])
     _current_branch_regex = re.compile(r"(CURRENT_BRANCH:\s)(.*)", re.MULTILINE)
 
     @classmethod
@@ -34,10 +34,10 @@ class CoverageGenerator(object):
 
     @classmethod
     def generate(cls):
-        ccg = cls._CoverageGeneratorConfig(bucket_root=config.get("s3", "bucket_root"),
-                                           project_root=config.get("project", "root_dir"),
+        ccg = cls._CoverageGeneratorConfig(project_root=config.get("project", "root_dir"),
                                            sub_directories=config.getlist("project", "subdirectories"))
         for sub_directory in ccg.sub_directories:
+            logging.info("Running CocoaG on subdirectory: {}".format(sub_directory))
             cls._process(active_sub_directory=sub_directory, config=ccg)
 
     @classmethod
@@ -87,13 +87,17 @@ class CoverageGenerator(object):
 
         with open(badge_info.file_location) as coverage_img:
             data = coverage_img.read()
-            S3Client.save(data=data, bucket=config.bucket_root, key_name=full_key_path)
+            S3Client.save(data=data, key_name=full_key_path)
 
-        obj_url = S3Client.get_obj_url(bucket=config.bucket_root, key_name=full_key_path)
+        obj_url = S3Client.get_obj_url(key_name=full_key_path)
+        logging.debug("obj_url: {}".format(obj_url))
         # Return the location of the uploaded badge
-        bucket_location = S3Client.get_bucket_location(bucket=config.bucket_root)
+        bucket_location = S3Client.get_bucket_location()
+        logging.debug("bucket_location: {}".format(bucket_location))
         if bucket_location:
             ins_point = obj_url.find(".")
-            return obj_url[:ins_point] + "." + bucket_location + obj_url[ins_point:]
+            obj_url_with_location = obj_url[:ins_point] + "." + bucket_location + obj_url[ins_point:]
+            logging.debug("obj_url_with_location: {}".format(obj_url_with_location))
+            return obj_url_with_location
         else:
             return obj_url
